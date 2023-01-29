@@ -12,6 +12,7 @@ using System.IO;
 using System.Collections.Generic;
 using System;
 using System.Threading;
+using Azure.Core;
 
 namespace DurableAzureFunctionCapabilities
 {
@@ -25,12 +26,8 @@ namespace DurableAzureFunctionCapabilities
         {
             var bodyAsString = await ReadBody(req);
             var body = JsonConvert.DeserializeObject<HttpFeedbackRequest>(bodyAsString);
-
-            var result = await starter.GetStatusAsync(bookingId);
-            if (new[] { OrchestrationRuntimeStatus.Completed }.Contains(result.RuntimeStatus)) return new OkObjectResult("Booked");
-            if (new[] { OrchestrationRuntimeStatus.Failed, OrchestrationRuntimeStatus.Canceled, OrchestrationRuntimeStatus.Terminated }.Contains(result.RuntimeStatus)) return new OkObjectResult("Booking Rejected");
-            return new OkObjectResult("In progress");
-
+            await starter.StartNewAsync("FeedbackOrchestrationOrchestration", new CreateFeedbackOrchestrationParameters() { });
+            return new AcceptedResult(req.Path, "accepted");
         }
 
         [FunctionName("FeedbackOrchestrationOrchestration")]

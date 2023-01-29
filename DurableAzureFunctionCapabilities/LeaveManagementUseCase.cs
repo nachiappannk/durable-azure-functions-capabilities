@@ -21,6 +21,7 @@ namespace DurableAzureFunctionCapabilities
     {
         [FunctionName("CreateLeaveRequest")]
         [OpenApiOperation(operationId: "Run", tags: new[] { "leave" })]
+        [OpenApiRequestBody("application/json", typeof(HttpLeaveRequest))]
         public static async Task<IActionResult> CreateLeave(
             [HttpTrigger(AuthorizationLevel.Anonymous, new[] { "post" }, Route = "v1/leaves")] HttpRequest req,
             [DurableClient] IDurableOrchestrationClient starter)

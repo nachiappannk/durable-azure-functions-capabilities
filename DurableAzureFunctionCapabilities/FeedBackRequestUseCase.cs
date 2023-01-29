@@ -20,13 +20,18 @@ namespace DurableAzureFunctionCapabilities
     {
         [FunctionName("CreateFeedbackRequest")]
         [OpenApiOperation(operationId: "Run", tags: new[] { "feedback" })]
+        [OpenApiRequestBody("application/json", typeof(HttpFeedbackRequest))]
         public static async Task<IActionResult> GetBookingStatus(
             [HttpTrigger(AuthorizationLevel.Anonymous, new[] { "get" }, Route = "v1/feebacks")] HttpRequest req,
             [DurableClient] IDurableOrchestrationClient starter)
         {
             var bodyAsString = await ReadBody(req);
             var body = JsonConvert.DeserializeObject<HttpFeedbackRequest>(bodyAsString);
-            await starter.StartNewAsync("FeedbackOrchestrationOrchestration", new CreateFeedbackOrchestrationParameters() { });
+            await starter.StartNewAsync("FeedbackOrchestrationOrchestration", new CreateFeedbackOrchestrationParameters() 
+            { 
+                RequestorId = body.RequestorId,
+                RequestHandlerid = body.RequestHandlerid,
+            });
             return new AcceptedResult(req.Path, "accepted");
         }
 
@@ -34,7 +39,11 @@ namespace DurableAzureFunctionCapabilities
         public static async Task<string> CreateFeedback([OrchestrationTrigger] IDurableOrchestrationContext context)
         {
             var orchestrationRequest = context.GetInput<CreateFeedbackOrchestrationParameters>();
-            var requestId = await context.CallActivityAsync<string>("CreateFeedbackActivity", new CreateFeedbackActityParameters() { });
+            var requestId = await context.CallActivityAsync<string>("CreateFeedbackActivity", new CreateFeedbackActityParameters() 
+            {
+                RequestHandlerid = orchestrationRequest.RequestHandlerid,
+                RequestorId = orchestrationRequest.RequestorId,
+            });
             var requestTime = context.CurrentUtcDateTime;
             var timeForNextCheck = requestTime;
             while (context.CurrentUtcDateTime < requestTime.AddDays(30))
@@ -85,10 +94,16 @@ namespace DurableAzureFunctionCapabilities
     }
 
     public class CreateFeedbackOrchestrationParameters
-    { 
+    {
+        public string RequestorId { get; set; }
+
+        public string RequestHandlerid { get; set; }
     }
 
     public class CreateFeedbackActityParameters
-    { 
+    {
+        public string RequestorId { get; set; }
+
+        public string RequestHandlerid { get; set; }
     }
 }

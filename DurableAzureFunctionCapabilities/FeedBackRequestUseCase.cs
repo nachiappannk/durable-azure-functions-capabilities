@@ -52,6 +52,7 @@ namespace DurableAzureFunctionCapabilities
                 await context.CreateTimer(timeForNextCheck, CancellationToken.None);
                 var isFeebackProvided = await context.CallActivityAsync<bool>("IsFeedbackProvider", requestId);
                 if (isFeebackProvided == true) return "Feedback provided";
+                await context.CallActivityAsync("SendReminderMail", requestId);
             }
             await context.CallActivityAsync("CancelFeedbackRequest", requestId);
             return "Feedback not provided. Feedback request cancelled";
@@ -70,6 +71,12 @@ namespace DurableAzureFunctionCapabilities
         {
             //todo implementation of checking feedback request
             return false;
+        }
+
+        [FunctionName("SendReminderMail")]
+        public async Task SendReminderMail([ActivityTrigger] string requestId)
+        {
+            //todo implementation of sending reminder mail
         }
 
         [FunctionName("CancelFeedbackRequest")]
